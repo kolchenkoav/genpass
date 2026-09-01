@@ -618,6 +618,8 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > `genpass` пересобирается с нуля по этому плану: Java **21** (решение пользователя),
 > базовый пакет **`org.example.genpass`** (PLAN 5.1; task-файлы со ссылками на
 > `org.example.jenpass` считать устаревшими). Новые записи добавляются сверху.
+> Решение пользователя: разработка ведётся напрямую на **master** в корневом каталоге
+> (worktree .worktrees/genpass и ветка feature/genpass-rebuild смержены и удалены).
 
 - **M2 (task-03) выполнен.** Веб-слой `org.example.genpass.web`: WebServer (JDK HttpServer,
   пул 4 потока, graceful stop, env PORT/HOST с валидацией parsePort 1–65535), ApiHandlers
