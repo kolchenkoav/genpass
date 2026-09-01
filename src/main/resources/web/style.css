@@ -28,6 +28,12 @@ body {
   line-height: 1.55;
 }
 
+/* Атрибут hidden обязан скрывать панели: .panel{display:flex} иначе перекрывает
+   UA-правило [hidden]{display:none} (специфичность автора выше). */
+[hidden] {
+  display: none !important;
+}
+
 .shell {
   max-width: 640px;
   margin: 0 auto;

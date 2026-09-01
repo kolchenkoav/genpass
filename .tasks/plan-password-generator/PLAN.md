@@ -643,6 +643,10 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
   хинт копирования, показ 400-ошибки «at least one character set must be enabled»,
   JS-ошибок 0. Фактическая запись в буфер требует реального браузера/HTTPS — проверяется
   пользователем (fallback execCommand срабатывает, в headless буфер недоступен).
+  БАГ-ФИКС (после отчёта пользователя): все три панели отображались одновременно —
+  `.panel{display:flex}` в авторском CSS перекрывал UA-правило `[hidden]{display:none}`.
+  Исправлено правилом `[hidden]{display:none !important}`; регрессия проверена CDP
+  (computed display панелей при загрузке и при переключении вкладок: flex,none,none ✓).
 - **M1 (task-02) выполнен.** Ядро `org.example.genpass.core` (10 классов):
   CryptoRandom (SecureRandom-синглтон INSTANCE, nextInt(bound), shuffle(char[]/String[])),
   CharGroups (SPECIAL 27 символов, AMBIGUOUS={I,l,1,O,0,|}), records PasswordOptions
