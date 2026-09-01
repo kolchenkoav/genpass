@@ -36,7 +36,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 - [x] **task-01-cleanup-baseline.md** — M0. Чистка pom.xml и починка тестового каркаса (базовая линия сборки)
 - [x] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
 - [x] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
-- [ ] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
+- [x] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
 - [ ] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
 - [ ] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
 
@@ -176,7 +176,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
    `Content-Type: application/json; charset=UTF-8`; спецсимволы корректно экранируются Jackson'ом.
 9. **Производительность**: отклик генерации < 50 мс на LAN; сервер держит параллельные
    запросы (thread-pool executor).
-10. **Легковесность образа**: runtime-слой на базе `eclipse-temurin:17-jre`, итоговый образ
+10. **Легковесность образа**: runtime-слой на базе `eclipse-temurin:21-jre`, итоговый образ
     без лишних утилит; — см. раздел Docker.
 
 ---
@@ -187,14 +187,14 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 |---|---|---|
 | Язык/сборка | Java 17 + Maven | Уже задано в `pom.xml` (`maven.compiler.*=17`) |
 | Ядро генерации | Чистый JDK: `SecureRandom` | Ядро сознательно без сторонних зависимостей — проще аудировать безопасность |
-| Веб-сервер | **Встроенный `com.sun.net.httpserver.HttpServer`** (модуль `jdk.httpserver`, входит в JDK 17) | Spring Boot в pom отсутствует и избыточен для state-less генератора; сторонние лёгкие серверы (Javalin/Undertow) = новые зависимости. JDK-сервер — ноль новых зависимостей, многопоточность через `ExecutorService`, достаточен для LAN. Меньше зависимостей = меньше CVE-поверхность |
+| Веб-сервер | **Встроенный `com.sun.net.httpserver.HttpServer`** (модуль `jdk.httpserver`, входит в JDK 17+) | Spring Boot в pom отсутствует и избыточен для state-less генератора; сторонние лёгкие серверы (Javalin/Undertow) = новые зависимости. JDK-сервер — ноль новых зависимостей, многопоточность через `ExecutorService`, достаточен для LAN. Меньше зависимостей = меньше CVE-поверхность |
 | JSON | `jackson-databind` 2.17.2 (уже в pom) | Уже есть; `gson` — убрать как дубль |
 | Модель/DTO | Lombok (уже в pom, provided) | Сокращает бойлерплейт DTO запросов/ответов |
 | Логирование | `slf4j-api` + `slf4j-nop` (уже в pom) | NOP-биндинг — гарантия «ничего не логируется»; для приложения с паролями это фича безопасности |
 | Unit-тесты | TestNG 7.9.0 (уже в pom; перевести в scope `test`) | Задано: «Java + Maven + TestNG» |
 | Интеграционные тесты HTTP | rest-assured 5.4.0 (уже в pom; перевести в scope `test`) | Уже есть — переиспользуем для проверки эндпоинтов/заголовков вместо ручного curl |
 | Fat-jar | `maven-shade-plugin` | jar-packaging по умолчанию не пакует зависимости; shade даёт самодостаточный jar для Docker |
-| Контейнеры | Builder: `--platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-17`; runtime: `eclipse-temurin:17-jre` (amd64/arm64) или `debian:12-slim` + `openjdk-17-jre-headless` (arm/v7) | Multi-stage, multi-arch: linux/amd64 + linux/arm64 + linux/arm/v7 (см. раздел 8) |
+| Контейнеры | Builder: `--platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre` (amd64/arm64) или `debian:13-slim` + `openjdk-21-jre-headless` (arm/v7) | Multi-stage, multi-arch: linux/amd64 + linux/arm64 + linux/arm/v7 (см. раздел 8) |
 
 ---
 
@@ -302,10 +302,10 @@ linux/arm64 и linux/arm/v7 — уточнять заранее архитект
 
 Задачи:
 - Multi-stage `Dockerfile` (раздел 8.1): builder с `--platform=$BUILDPLATFORM`
-  `maven:3.9-eclipse-temurin-17` (`dependency:go-offline` + `mvn package`), runtime
-  `eclipse-temurin:17-jre` + non-root + fat-jar + Java-`HEALTHCHECK` + `EXPOSE 8080`.
-- Отдельный `Dockerfile.armv7` (раздел 8.2): тот же builder; runtime `debian:12-slim` +
-  `openjdk-17-jre-headless` (armhf) — Temurin не выпускает armv7-образов JDK 17.
+  `maven:3.9-eclipse-temurin-21` (`dependency:go-offline` + `mvn package`), runtime
+  `eclipse-temurin:21-jre` + non-root + fat-jar + Java-`HEALTHCHECK` + `EXPOSE 8080`.
+- Отдельный `Dockerfile.armv7` (раздел 8.2): тот же builder; runtime `debian:13-slim` +
+  `openjdk-21-jre-headless` (armhf) — Temurin не выпускает armv7-образов JDK 21.
 - Локальная проверка: сборка amd64 (`--load`), запуск, `docker inspect` — health=healthy,
   процесс от non-root; размеры образов (amd64 и armv7) зафиксировать в outcome.
 - Multi-arch по разделу 8.3: temurin-платформы + armv7 объединяются в один манифест
@@ -383,7 +383,7 @@ multi-arch манифест (amd64+arm64+arm/v7) собран и запушен 
 
 ```dockerfile
 # ---------- Stage 1: build ----------
-FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-17 AS build   # сборка всегда нативно на хосте
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build   # сборка всегда нативно на хосте
 WORKDIR /build
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline          # кэш зависимостей отдельным слоем
@@ -391,7 +391,7 @@ COPY src ./src
 RUN mvn -B clean package                       # тесты выполняются здесь
 
 # ---------- Stage 2: runtime ----------
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 RUN groupadd -r app && useradd -r -g app -d /app app
 WORKDIR /app
 COPY --from=build --chown=app:app /build/target/genpass.jar /app/app.jar
@@ -399,7 +399,7 @@ USER app                                       # non-root обязательно
 EXPOSE 8080
 ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["java", "-cp", "/app/app.jar", "org.example.jenpass.web.HealthCheck"]
+  CMD ["java", "-cp", "/app/app.jar", "org.example.genpass.web.HealthCheck"]
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 ```
 
@@ -414,11 +414,11 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
 ### 8.2. Dockerfile.armv7 — отдельный вариант для 32-bit ARM (linux/arm/v7)
 
-У Eclipse Temurin нет armv7-образов JDK 17, поэтому arm/v7 получает собственный runtime.
+У Eclipse Temurin нет armv7-образов JDK 21, поэтому arm/v7 получает собственный runtime.
 Проверено по первоисточникам (web_fetch, план-время):
-- **Debian 12 (bookworm)** публикует `openjdk-17-jre-headless` для архитектуры **armhf**
-  (версия `17.0.20.1+1-1~deb12u1`, ~157 МБ установленного) — источник: packages.debian.org/bookworm/openjdk-17-jre-headless.
-- Альтернатива — `bellsoft/liberica-openjre-debian:17`: официальный Dockerfile Liberica
+- **Debian 13 (trixie)** публикует `openjdk-21-jre-headless` для архитектуры **armhf**
+  (версия `21.0.11+10-1~deb13u2`, ~165 МБ установленного) — источник: binary-armhf/Packages (deb.debian.org/trixie).
+- Альтернатива — `bellsoft/liberica-openjre-debian:21`: официальный Dockerfile Liberica
   обрабатывает `armv[67]l` (arch `arm32-vfp-hflt`), НО по README репозитория тег без суффикса
   архитектуры по умолчанию покрывает только amd64+arm64 — перед использованием проверять
   `docker buildx imagetools inspect`. Azul Zulu 17 для armv7 подтвердить не удалось
@@ -428,16 +428,16 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
 ```dockerfile
 # Dockerfile.armv7 — только linux/arm/v7
-FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-17 AS build
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B clean package
 
-FROM debian:12-slim
+FROM debian:13-slim
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
+ && apt-get install -y --no-install-recommends openjdk-21-jre-headless \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd -r app && useradd -r -g app -d /app app
 WORKDIR /app
@@ -563,7 +563,7 @@ services:
 
 | Риск | Влияние | Митигация |
 |---|---|---|
-| armv7-runtime (32-bit) | Temurin не выпускает armv7-образов JDK 17; armv7-слой строится на Debian 12 + `openjdk-17-jre-headless` (armhf, ~157 МБ) — образ тяжелее temurin-вариантов и зависит от пакетной базы Debian | Риск архитектуры NAS ЗАКРЫТ решением «универсальный multi-arch» (раздел 8.2–8.3): Debian-база проверена по packages.debian.org; Liberica `openjre-debian:17` — альтернатива (проверять тег через `imagetools inspect`); контролировать размер образа в M3; если armv7-вариант окажется неработоспособен на целевом NAS — исключить arm/v7 из манифеста с явным предупреждением в README |
+| armv7-runtime (32-bit) | Temurin не выпускает armv7-образов JDK 21; armv7-слой строится на Debian 13 (trixie) + `openjdk-21-jre-headless` (armhf, ~165 МБ) — образ тяжелее temurin-вариантов и зависит от пакетной базы Debian | Риск архитектуры NAS ЗАКРЫТ решением «универсальный multi-arch» (раздел 8.2–8.3): Debian-база проверена по packages.debian.org; Liberica `openjre-debian:21` — альтернатива (проверять тег через `imagetools inspect`); контролировать размер образа в M3; если armv7-вариант окажется неработоспособен на целевом NAS — исключить arm/v7 из манифеста с явным предупреждением в README |
 | Multi-arch сборка требует registry и QEMU | Manifest-list нельзя загрузить в локальный docker; эмуляция медленная | Builder-стейдж закреплён за `$BUILDPLATFORM` (Maven всегда нативен; QEMU — только лёгкие runtime-стейджи); офлайн-запасной сценарий — per-platform tar + импорт (п. 8.3, 9.3) |
 | 32-bit JVM на слабых armv7-NAS | Ограничения кучи/производительности 32-bit JVM | Приложение лёгкое (state-less); тестовый прогон на целевом NAS в M4; при проблемах — флаг `-Xmx256m` в ENTRYPOINT |
 | `navigator.clipboard` требует secure context | «Копировать» может не работать по HTTP с LAN-IP в части браузеров | Fallback `document.execCommand('copy')` + рекомендация HTTPS reverse-proxy (п. 9.4) |
@@ -595,8 +595,8 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 - Fat-jar — maven-shade-plugin; фиксированное имя артефакта: `genpass.jar`.
 - Multi-arch (решение пользователя): ОДИН универсальный манифест под linux/amd64, linux/arm64
   и linux/arm/v7. Два Dockerfile: общий (temurin-runtime, amd64+arm64) и `Dockerfile.armv7`
-  (debian:12-slim + openjdk-17-jre-headless armhf — проверено packages.debian.org/bookworm,
-  пакет 17.0.20.1+1-1~deb12u1). Альтернатива armv7 — bellsoft/liberica-openjre-debian:17
+  (debian:13-slim + openjdk-21-jre-headless armhf — проверено по binary-armhf/Packages trixie,
+  пакет 21.0.11+10-1~deb13u2). Альтернатива armv7 — bellsoft/liberica-openjre-debian:21
   (Dockerfile вендора обрабатывает armv[67]l → arm32-vfp-hflt), но тег без суффикса arch,
   по README репозитория, по умолчанию покрывает только amd64+arm64 — проверять перед заменой.
   Builder-стейдж везде `--platform=$BUILDPLATFORM`.
@@ -607,7 +607,7 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 - Архитектура целевого NAS неизвестна, но это больше НЕ блокер: образ универсальный
   (amd64+arm64+arm/v7). Модель NAS нужна только для выбора per-platform tar при
   офлайн-импорте (п. 9.3) и для финального теста в M4.
-- Доступность armv7 JRE 17 проверена web_fetch'ом: Debian bookworm — подтверждено;
+- Доступность armv7 JRE 21 проверена по индексу пакетов Debian: trixie (binary-armhf) — подтверждено;
   Liberica — подтверждено с оговоркой о тегах; Azul Zulu 17 armv7 — НЕ подтверждено
   (страница загрузок рендерится скриптом), поэтому не выбран.
 
@@ -621,6 +621,22 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > Решение пользователя: разработка ведётся напрямую на **master** в корневом каталоге
 > (worktree .worktrees/genpass и ветка feature/genpass-rebuild смержены и удалены).
 
+- **M3 (task-04) выполнен.** Dockerfile (temurin-21 builder+runtime, non-root app, Java-HEALTHCHECK
+  `org.example.genpass.web.HealthCheck`, EXPOSE 8080) + Dockerfile.armv7 (debian:13-slim +
+  openjdk-21-jre-headless armhf) + .dockerignore. **АКТУАЛИЗАЦИЯ Java 21** (решение пользователя):
+  temurin-17/openjdk-17 из плана не запустят jar 21-го класса (UnsupportedClassVersionError) →
+  builder/runtime 21; armv7: openjdk-21-jre-headless в bookworm ОТСУТСТВУЕТ → debian:13-slim
+  (trixie), пакет проверен по binary-armhf/Packages: 21.0.11+10-1~deb13u2, ~165 МБ (PLAN 8.1/8.2
+  обновлены). Окружение: Docker 28.2.2, buildx v0.24, QEMU binfmt установлен (tonistiigi/binfmt);
+  registry НЕДОСТУПЕН (нет авторизации) → офлайн-сценарий per-platform tar (план 9.3).
+  Верификация: (1) локальная сборка amd64 — в build-stage `mvn clean package` с 56 тестами
+  (0 падений, BUILD SUCCESS), образ 321 МБ; `docker run`: health=healthy, user=app (non-root),
+  `id -un`=app, health/API/статика 200; (2) tar с docker-container билдером (buildx create multi):
+  genpass-1.0-amd64.tar 112 МБ, -arm64.tar 110 МБ, -armv7.tar 88 МБ — RepoTags ["genpass:1.0"]
+  во всех трёх манифестах (урок прежнего проекта: без тега compose сломался бы); (3) QEMU-прогоны:
+  arm64 и armv7 образы загружены (`docker load`) и запущены под эмуляцией — `/api/health` → 200
+  `{"status":"ok"}`, стартовая строка в логах; armv7-образ 265 МБ (debian+JRE armhf).
+  Multi-arch manifest (imagetools create) отложен до появления registry — согласуется с пользователем.
 - **M2 (task-03) выполнен.** Веб-слой `org.example.genpass.web`: WebServer (JDK HttpServer,
   пул 4 потока, graceful stop, env PORT/HOST с валидацией parsePort 1–65535), ApiHandlers
   (Jackson records, путь-гарды до проверки метода → 404, 405+Allow, лимит тела 64 КБ → 413,

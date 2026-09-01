@@ -1,0 +1,9 @@
+target/
+.git/
+.idea/
+.tasks/
+.veai/
+.mimocode/
+.worktrees/
+*.tar
+dependency-reduced-pom.xml

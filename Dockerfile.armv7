@@ -1,0 +1,24 @@
+# Dockerfile.armv7 — только linux/arm/v7 (PLAN.md 8.2)
+# Temurin не выпускает armv7-образов; runtime — Debian 13 (trixie) + openjdk-21-jre-headless
+# (armhf; проверено по binary-armhf/Packages: 21.0.11+10-1~deb13u2; план: bookworm+17, актуализировано)
+
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /build
+COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
+COPY src ./src
+RUN mvn -B clean package
+
+FROM debian:13-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openjdk-21-jre-headless \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd -r app && useradd -r -g app -d /app app
+WORKDIR /app
+COPY --from=build --chown=app:app /build/target/genpass.jar /app/app.jar
+USER app
+EXPOSE 8080
+ENV PORT=8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["java", "-cp", "/app/app.jar", "org.example.genpass.web.HealthCheck"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
