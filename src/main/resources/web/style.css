@@ -1,16 +1,20 @@
-/* genpass — токены */
+/* genpass — тёмная тема (замечание пользователя: «не везде тёмная тема») */
 :root {
-  --ink: #1F2430;
-  --paper: #F7F7F5;
-  --panel: #FFFFFF;
-  --line: #E3E1DA;
-  --muted: #5C6470;
-  --accent: #1F5F4D;
-  --accent-ink: #FFFFFF;
-  --weak: #B3372E;
-  --medium: #9A6214;
-  --strong: #2E7D46;
-  --very-strong: #1F5F4D;
+  --bg: #12151C;
+  --panel: #1A1F2A;
+  --inset: #0F1219;
+  --line: #2C3240;
+  --text: #E6E9F0;
+  --muted: #9AA3B2;
+  --accent: #4C9A82;
+  --accent-ink: #0C1A15;
+  --accent-hover: #5FB096;
+  --accent-active: #3D806C;
+  --disabled: #5A6575;
+  --weak: #F2A39B;
+  --medium: #E8C48A;
+  --strong: #A9DDBB;
+  --very-strong: #9FD8C6;
   --mono: 'SF Mono', 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
   --sans: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -21,8 +25,8 @@
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--sans);
   font-size: 16px;
   line-height: 1.55;
@@ -74,7 +78,7 @@ body {
 }
 
 .tab:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .tab.is-active {
@@ -103,7 +107,7 @@ body {
 .sets legend {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .sets {
@@ -125,12 +129,17 @@ body {
 input[type="number"],
 select {
   font: inherit;
-  color: var(--ink);
-  background: var(--paper);
+  color: var(--text);
+  background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 10px 12px;
   max-width: 160px;
+}
+
+select option {
+  background: var(--panel);
+  color: var(--text);
 }
 
 input[type="checkbox"] {
@@ -163,41 +172,42 @@ button.primary {
 }
 
 button.primary:hover {
-  background: #18493B;
+  background: var(--accent-hover);
 }
 
 button.primary:active {
-  background: #133D31;
+  background: var(--accent-active);
 }
 
 button.primary:disabled {
-  background: #8FA89F;
-  border-color: #8FA89F;
+  background: var(--disabled);
+  border-color: var(--disabled);
   cursor: default;
 }
 
 button.ghost {
-  background: var(--panel);
+  background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent);
 }
 
 button.ghost:hover {
-  background: #EEF4F1;
+  background: rgba(76, 154, 130, 0.12);
 }
 
 button.ghost:disabled {
-  color: #8FA89F;
+  color: var(--disabled);
   border-color: var(--line);
-  background: var(--panel);
+  background: transparent;
   cursor: default;
 }
 
-/* Панель результата */
+/* Панель результата — тёмный инсет с моноширинным секретом */
 .result {
   margin-top: 24px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--inset);
+  color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 24px;
 }
@@ -211,10 +221,10 @@ button.ghost:disabled {
   color: #D9DEE8;
 }
 
-.result-secret.is-weak { color: #F2A39B; }
-.result-secret.is-medium { color: #E8C48A; }
-.result-secret.is-strong { color: #A9DDBB; }
-.result-secret.is-very-strong { color: #9FD8C6; }
+.result-secret.is-weak { color: var(--weak); }
+.result-secret.is-medium { color: var(--medium); }
+.result-secret.is-strong { color: var(--strong); }
+.result-secret.is-very-strong { color: var(--very-strong); }
 
 .result-meta {
   display: flex;
@@ -223,14 +233,14 @@ button.ghost:disabled {
   gap: 8px 16px;
   margin-top: 16px;
   font-size: 14px;
-  color: #AEB6C4;
+  color: var(--muted);
 }
 
 .meter {
   width: 120px;
   height: 6px;
   border-radius: 3px;
-  background: #3A4150;
+  background: #343B4A;
   overflow: hidden;
 }
 
@@ -259,13 +269,13 @@ button.ghost:disabled {
 }
 
 .hint {
-  color: #AEB6C4;
+  color: var(--muted);
   font-size: 14px;
 }
 
 .error {
   margin: 16px 0 0;
-  color: #F2A39B;
+  color: var(--weak);
   font-size: 14px;
 }
 
