@@ -11,6 +11,7 @@
             <class name="org.example.genpass.core.PassphraseGeneratorTest"/>
             <class name="org.example.genpass.core.WordlistTest"/>
             <class name="org.example.genpass.core.StrengthEstimatorTest"/>
+            <class name="org.example.genpass.web.ApiIntegrationTest"/>
         </classes>
     </test>
 </suite>

@@ -35,7 +35,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 
 - [x] **task-01-cleanup-baseline.md** — M0. Чистка pom.xml и починка тестового каркаса (базовая линия сборки)
 - [x] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
-- [ ] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
+- [x] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
 - [ ] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
 - [ ] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
 - [ ] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
@@ -619,6 +619,28 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > базовый пакет **`org.example.genpass`** (PLAN 5.1; task-файлы со ссылками на
 > `org.example.jenpass` считать устаревшими). Новые записи добавляются сверху.
 
+- **M2 (task-03) выполнен.** Веб-слой `org.example.genpass.web`: WebServer (JDK HttpServer,
+  пул 4 потока, graceful stop, env PORT/HOST с валидацией parsePort 1–65535), ApiHandlers
+  (Jackson records, путь-гарды до проверки метода → 404, 405+Allow, лимит тела 64 КБ → 413,
+  строгий JSON: битые/неизвестные поля → 400, ошибки валидации ядра → 400, 500 для
+  RuntimeException), SecurityHeaders (no-store API / no-cache статика, CSP, nosniff,
+  no-referrer, X-Frame-Options DENY), StaticHandler (только /, /app.js, /style.css, HEAD;
+  без листинга), HealthCheck (HttpClient → exit 0/1). App.main стартует сервер, stdout —
+  только строка запуска. Ответ API: {result, entropyBits, strength, crackTime} (решение M2).
+  UI (convention-mode): ванильные HTML/JS/CSS, системные шрифты, три вкладки, тёмная
+  панель результата с моноширинным секретом и шкалой стойкости (4 уровня), ошибки и
+  состояния, фокус-кольца, prefers-reduced-motion, 375px без переполнений, копирование
+  clipboard+fallback, fetch same-origin cache:no-store. Баг-фикс в процессе: CONTENT_TYPES
+  ключевался по имени файла вместо ресурсного пути → Content-Type=null → NPE в Headers.set
+  → сервер молча закрывал соединение (000/NoHttpResponse); исправлено ключами /web/*.
+  Интеграционные тесты rest-assured (17): health, схема ответов, опции passphrase
+  (5 слов, капитализация, ровно одна цифра), PIN, заголовки, 400/404/405/413, статика.
+  JsonPath-конфиг NumberReturnType.DOUBLE (иначе Float ломает greaterThan/closeTo).
+  Верификация: `mvn clean verify` SUCCESS 56 тестов (39 unit + 17 integration); curl-смоук
+  (статика 200, API 200, HEAD); браузерный CDP-смоук Chrome headless: генерация 3 типов,
+  хинт копирования, показ 400-ошибки «at least one character set must be enabled»,
+  JS-ошибок 0. Фактическая запись в буфер требует реального браузера/HTTPS — проверяется
+  пользователем (fallback execCommand срабатывает, в headless буфер недоступен).
 - **M1 (task-02) выполнен.** Ядро `org.example.genpass.core` (10 классов):
   CryptoRandom (SecureRandom-синглтон INSTANCE, nextInt(bound), shuffle(char[]/String[])),
   CharGroups (SPECIAL 27 символов, AMBIGUOUS={I,l,1,O,0,|}), records PasswordOptions

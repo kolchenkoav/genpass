@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Генератор паролей</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <h1>Генератор паролей</h1>
+      <p class="lede">Офлайн-генератор паролей, passphrase и PIN. Пароли не сохраняются и не отправляются никуда, кроме вашего браузера.</p>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Режим генерации">
+      <button class="tab is-active" id="tab-password" type="button" role="tab" aria-selected="true" aria-controls="panel-password" data-mode="password">Пароль</button>
+      <button class="tab" id="tab-passphrase" type="button" role="tab" aria-selected="false" aria-controls="panel-passphrase" data-mode="passphrase">Passphrase</button>
+      <button class="tab" id="tab-pin" type="button" role="tab" aria-selected="false" aria-controls="panel-pin" data-mode="pin">PIN</button>
+    </nav>
+
+    <form id="panel-password" class="panel" data-mode="password">
+      <div class="field">
+        <label for="pw-length">Длина</label>
+        <input id="pw-length" type="number" name="length" min="4" max="128" value="16" required>
+      </div>
+      <fieldset class="sets">
+        <legend>Наборы символов</legend>
+        <label class="check"><input type="checkbox" name="lowercase" checked> строчные a–z</label>
+        <label class="check"><input type="checkbox" name="uppercase" checked> прописные A–Z</label>
+        <label class="check"><input type="checkbox" name="digits" checked> цифры 0–9</label>
+        <label class="check"><input type="checkbox" name="special" checked> спецсимволы</label>
+      </fieldset>
+      <label class="check"><input type="checkbox" name="excludeAmbiguous"> исключить неоднозначные (I l 1 O 0)</label>
+      <button type="submit" class="primary">Сгенерировать</button>
+    </form>
+
+    <form id="panel-passphrase" class="panel" data-mode="passphrase" hidden>
+      <div class="field">
+        <label for="pp-words">Слов</label>
+        <input id="pp-words" type="number" name="wordCount" min="3" max="12" value="5" required>
+      </div>
+      <div class="field">
+        <label for="pp-sep">Разделитель</label>
+        <select id="pp-sep" name="separator">
+          <option value="-">дефис (-)</option>
+          <option value="_">подчёркивание (_)</option>
+          <option value=" ">пробел</option>
+          <option value="">без разделителя</option>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" name="capitalize"> капитализировать слова</label>
+      <label class="check"><input type="checkbox" name="addDigit"> добавить цифру</label>
+      <button type="submit" class="primary">Сгенерировать</button>
+    </form>
+
+    <form id="panel-pin" class="panel" data-mode="pin" hidden>
+      <div class="field">
+        <label for="pin-length">Длина</label>
+        <input id="pin-length" type="number" name="length" min="3" max="12" value="6" required>
+      </div>
+      <label class="check"><input type="checkbox" name="noLeadingZero"> без ведущих нулей</label>
+      <button type="submit" class="primary">Сгенерировать</button>
+    </form>
+
+    <section class="result" aria-live="polite">
+      <div class="result-secret" id="result" tabindex="0" aria-label="Сгенерированный пароль">Настройте параметры и нажмите «Сгенерировать»</div>
+      <div class="result-meta">
+        <span class="meter" aria-hidden="true"><span class="meter-fill" id="meter"></span></span>
+        <span class="strength" id="strength"></span>
+        <span class="entropy" id="entropy"></span>
+        <span class="crack" id="crack"></span>
+      </div>
+      <div class="actions">
+        <button id="copy" class="ghost" type="button" disabled>Копировать</button>
+        <span class="hint" id="hint"></span>
+      </div>
+      <p class="error" id="error" hidden></p>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

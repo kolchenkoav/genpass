@@ -1,0 +1,286 @@
+/* genpass — токены */
+:root {
+  --ink: #1F2430;
+  --paper: #F7F7F5;
+  --panel: #FFFFFF;
+  --line: #E3E1DA;
+  --muted: #5C6470;
+  --accent: #1F5F4D;
+  --accent-ink: #FFFFFF;
+  --weak: #B3372E;
+  --medium: #9A6214;
+  --strong: #2E7D46;
+  --very-strong: #1F5F4D;
+  --mono: 'SF Mono', 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+  --sans: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+.masthead h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  margin: 0 0 28px;
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--muted);
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Панель формы */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label,
+.sets legend {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sets {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+input[type="number"],
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  max-width: 160px;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Кнопки */
+button.primary,
+button.ghost {
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.primary {
+  align-self: flex-start;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+button.primary:hover {
+  background: #18493B;
+}
+
+button.primary:active {
+  background: #133D31;
+}
+
+button.primary:disabled {
+  background: #8FA89F;
+  border-color: #8FA89F;
+  cursor: default;
+}
+
+button.ghost {
+  background: var(--panel);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+button.ghost:hover {
+  background: #EEF4F1;
+}
+
+button.ghost:disabled {
+  color: #8FA89F;
+  border-color: var(--line);
+  background: var(--panel);
+  cursor: default;
+}
+
+/* Панель результата */
+.result {
+  margin-top: 24px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.result-secret {
+  font-family: var(--mono);
+  font-size: 20px;
+  line-height: 1.4;
+  word-break: break-all;
+  min-height: 28px;
+  color: #D9DEE8;
+}
+
+.result-secret.is-weak { color: #F2A39B; }
+.result-secret.is-medium { color: #E8C48A; }
+.result-secret.is-strong { color: #A9DDBB; }
+.result-secret.is-very-strong { color: #9FD8C6; }
+
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #AEB6C4;
+}
+
+.meter {
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: #3A4150;
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--very-strong);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .meter-fill {
+    transition: width 0.2s ease;
+  }
+}
+
+.strength {
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.hint {
+  color: #AEB6C4;
+  font-size: 14px;
+}
+
+.error {
+  margin: 16px 0 0;
+  color: #F2A39B;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .shell {
+    padding: 24px 14px 48px;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  input[type="number"],
+  select {
+    max-width: none;
+    width: 100%;
+  }
+
+  .tab {
+    padding: 10px 10px;
+    flex: 1;
+    text-align: center;
+  }
+}
