@@ -34,11 +34,11 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 ## Task Plan (чек-лист задач)
 
 - [x] **task-01-cleanup-baseline.md** — M0. Чистка pom.xml и починка тестового каркаса (базовая линия сборки)
-- [x] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
-- [x] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
-- [x] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
-- [x] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
-- [x] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
+- [ ] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
+- [ ] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
+- [ ] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
+- [ ] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
+- [ ] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
 
 Зависимости: 01 → 02 → 03 → 04 → 05 → 06 (строго последовательно; каждая задача
 опирается на результат предыдущей).
@@ -609,6 +609,23 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
   (страница загрузок рендерится скриптом), поэтому не выбран.
 
 ### Outcomes (заполняется исполнителями по ходу работ)
+
+> Примечание (rebuild 2026-09-01): записи ниже — история ПРЕЖНЕЙ реализации
+> (jenerator-pass → generator-pass, коммиты в другом репозитории). Текущий репозиторий
+> `genpass` пересобирается с нуля по этому плану: Java **21** (решение пользователя),
+> базовый пакет **`org.example.genpass`** (PLAN 5.1; task-файлы со ссылками на
+> `org.example.jenpass` считать устаревшими). Новые записи добавляются сверху.
+
+- **M0 (task-01) выполнен, коммит 8f3d6cb (worktree .worktrees/genpass, ветка feature/genpass-rebuild).**
+  Базовый коммит 3e232b8 (план, pom, тест-ресурсы; .idea исключён из индекса и добавлен
+  в .gitignore). pom: finalName `genpass`, Java 21 (решение пользователя), maven-shade-plugin
+  3.6.0 (Main-Class `org.example.genpass.App`, фильтр сигнатур); scope зависимостей уже
+  корректны (testng/rest-assured×3 — test, gson отсутствует). Созданы App.java (печатает
+  `genpass <version>`, version из манифеста с fallback), package-info для core/web,
+  suite src/test/resources/testNG.xml (smoke: AppTest, 2 теста). `mvn -B clean verify` SUCCESS
+  (2 теста, 1:13 мин); compile-scope: jackson×3 + slf4j-api/nop (lombok provided);
+  `java -jar target/genpass.jar` → «genpass 1.0-SNAPSHOT», exit 0. Shade-warnings
+  (module-info/LICENSE overlap) — штатные, не вредят.
 - **M0 (task-01) выполнен, коммит 525b7e3.** testng/rest-assured → test scope, gson удалён, maven-shade-plugin 3.6.0 (finalName `genpass`, Main-Class `org.example.jenpass.App`, фильтр подписей). Созданы App.java + package-info для core/web, suite `src/test/resources/testNG.xml`, smoke AppTest (2 теста). `mvn clean verify` SUCCESS; compile-scope = jackson + slf4j(+nop) только; `java -jar` работает. Хвост: `dependency-reduced-pom.xml` (untracked) — добавить в .gitignore в M1.
 - **M1 (task-02) выполнен + полный quality-loop.** Коммиты bf7f068 (ядро: 9 классов core, словарь EFF 1296 слов пословно сверен с оригиналом, LICENSE) → b057e18 (fix-wave ревью) → 7d2e6df (javadoc-фикс). Review×2 + triage: 12 TP/0 FP, все закрыты; ключевые: добавлен `PasswordGenerator.alphabetSize(PasswordOptions)` (фактический пул после excludeAmbiguous — ИТОГ 84, а не 83; '|' НЕ входит в SPECIAL — фильтр спецнабора no-op), Wordlist получил ленивый volatile-кэш дефалтного словаря, pickRandom → package-private, .gitattributes (eol=lf). Решение по A2: спека 2.2 исправлена — цифра addDigit добавляется в КОНЕЦ одного случайного слова (оценка +3.32 бита консервативна). Итог: 64 теста TestNG зелёные. ДЛЯ M2: энтропию пароля считать через alphabetSize(options); для PIN с noLeadingZero — точная формула log2(9)+(n−1)·log2(10) (javadoc StrengthEstimator).
 - **M2 (task-03) выполнен + quality-loop.** Коммиты a5d050c (WebServer/ApiHandlers/SecurityHeaders/StaticHandler/HealthCheck, RU-UI без инлайн-скриптов, clipboard+fallback, 19 интеграционных тестов rest-assured) → 553b19a (fix-wave 12 TP: строгая int-коэрсия Jackson Float/String→Fail, лимит тела 64 КБ→413, 405+Allow, HEAD на статике, path-guard'ы, no-store на /api/*-404, валидация PORT+чистые ошибки, graceful stop, favicon, +11 тестов). Итог: 94 теста. Формат ответа {"result","entropyBits","strength","crackTime"} — PLAN 2.1 правлен.
