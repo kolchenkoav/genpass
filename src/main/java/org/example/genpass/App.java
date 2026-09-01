@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public final class App {
 
-    private static final String FALLBACK_VERSION = "1.0-SNAPSHOT";
+    private static final String FALLBACK_VERSION = "1.0.0";
 
     private App() {
     }
