@@ -1,0 +1,5 @@
+EFF short wordlist (eff_short_wordlist_1.txt), 1296 words.
+
+Source: https://www.eff.org/files/2016/09/08/eff_short_wordlist_1.txt
+The EFF wordlists are in the public domain (CC0 / public domain dedication by EFF).
+Dice-roll prefixes (5 digits + tab) are stripped; words only, one per line, UTF-8.

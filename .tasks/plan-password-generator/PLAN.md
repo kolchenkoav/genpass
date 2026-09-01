@@ -34,7 +34,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 ## Task Plan (чек-лист задач)
 
 - [x] **task-01-cleanup-baseline.md** — M0. Чистка pom.xml и починка тестового каркаса (базовая линия сборки)
-- [ ] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
+- [x] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
 - [ ] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
 - [ ] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
 - [ ] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
@@ -209,6 +209,7 @@ org.example.genpass
 │   ├── CryptoRandom           // обёртка SecureRandom: nextInt(bound), shuffle()
 │   ├── CharGroups             // константы наборов + AMBIGUOUS = {I,l,1,O,0,|}
 │   ├── PasswordOptions        // record: length, наборы, excludeAmbiguous
+│   ├── PinOptions              // record: length, noLeadingZero
 │   ├── PassphraseOptions      // record: wordCount, separator, capitalize, addDigit
 │   ├── PasswordGenerator      // гарантия покрытия наборов + перемешивание
 │   ├── Wordlist               // загрузка /wordlists/eff-short.txt (UTF-8, ~1296 слов)
@@ -354,12 +355,14 @@ multi-arch манифест (amd64+arm64+arm/v7) собран и запушен 
 - **Принадлежность алфавиту**: каждый символ результата входит в выбранные наборы.
 - **Исключение неоднозначных**: с `excludeAmbiguous=true` в результате нет `I,l,1,O,0,|`.
 - **Гарантия покрытия**: при 1000 генераций length=4 с 4 наборами каждый набор представлен.
-- **Статистика**: частота символов в 100 000 генераций длиной 1 укладывается в доверительный
+- **Статистика**: частота символов в 100 000 генераций (первый символ генераций длиной 4 —
+  длина 1 невалидна по 2.1) укладывается в доверительный
   интервал (хи-квадрат или допуск ±20% от равномерного); нет смещения между наборами.
 - **Passphrase**: словарь загружен (≈1296 слов), слово — элемент словаря, разделитель/
   капитализация/цифра применяются; повторные генерации различаются.
 - **PIN**: только цифры, длина, опция без ведущего нуля.
-- **Энтропия**: точечные значения (8 строчных ≈ 37.6 бит; 5 слов из 1296 ≈ 51.65 бит) с допуском ±0.01.
+- **Энтропия**: точечные значения (8 строчных ≈ 37.6 бит; 5 слов из 1296 ≈ 51.70 бит —
+  log2(1296)=10.3399, ×5=51.699; поправка от 51.65) с допуском ±0.01.
 - **Кодировки**: словарь читается в UTF-8 без искажений; спецсимволы проходят генерацию.
 
 ### 7.2. Интеграционные тесты HTTP-слоя (rest-assured, `src/test/java/.../web/`)
@@ -616,8 +619,24 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > базовый пакет **`org.example.genpass`** (PLAN 5.1; task-файлы со ссылками на
 > `org.example.jenpass` считать устаревшими). Новые записи добавляются сверху.
 
-- **M0 (task-01) выполнен, коммит 8f3d6cb (worktree .worktrees/genpass, ветка feature/genpass-rebuild).**
-  Базовый коммит 3e232b8 (план, pom, тест-ресурсы; .idea исключён из индекса и добавлен
+- **M1 (task-02) выполнен.** Ядро `org.example.genpass.core` (10 классов):
+  CryptoRandom (SecureRandom-синглтон INSTANCE, nextInt(bound), shuffle(char[]/String[])),
+  CharGroups (SPECIAL 27 символов, AMBIGUOUS={I,l,1,O,0,|}), records PasswordOptions
+  (4–128, ≥1 набор), PinOptions (3–12, noLeadingZero), PassphraseOptions (3–12 слов,
+  разделитель -/_/пробел/пусто), PasswordGenerator (гарантия покрытия + Фишер–Йетс,
+  alphabetSize(): пул 89, после исключения — 84; '|' нет в SPECIAL — фильтр no-op),
+  PinGenerator (noLeadingZero: log2(9)+(n-1)log2(10)), Wordlist (ленивый volatile-кэш
+  getDefault, load(InputStream) с пропуском пустых строк), PassphraseGenerator (цифра
+  в конец случайного слова, решение A2), StrengthEstimator (метки RU, crackTime @1e10/с).
+  Словарь eff-short.txt: 1296 слов с eff.org (префиксы кубиков срезаны, 100% [a-z-]+),
+  LICENSE-файл атрибуции; .gitattributes eol=lf. Тесты test-first: сначала 7 классов
+  тестов → падение «cannot find symbol» → реализация → зелёные. 39 тестов (7.1: границы,
+  алфавит, исключение неоднозначных, покрытие 1000×4 набора, статистика 100k ±20%,
+  passphrase словарь/разделитель/капитализация/цифра, PIN, энтропия 37.60/51.70/19.93/
+  19.78/127.85, crackTime-якоря). 3 правки тестов: длина 1 невалидна (мин 4) — статистика
+  по первому символу длины 4; пустой разделитель = сумма длин слов (19±); 40 бит = ~2 мин.
+  `mvn clean verify` SUCCESS; core не импортирует web/Jackson (grep подтверждён).
+- **M0 (task-01) выполнен.** Базовый коммит 3e232b8 (план, pom, тест-ресурсы; .idea исключён из индекса и добавлен
   в .gitignore). pom: finalName `genpass`, Java 21 (решение пользователя), maven-shade-plugin
   3.6.0 (Main-Class `org.example.genpass.App`, фильтр сигнатур); scope зависимостей уже
   корректны (testng/rest-assured×3 — test, gson отсутствует). Созданы App.java (печатает

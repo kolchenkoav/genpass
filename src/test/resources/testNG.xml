@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="genpass" verbose="1">
-    <test name="smoke">
+    <test name="core">
         <classes>
             <class name="org.example.genpass.AppTest"/>
+            <class name="org.example.genpass.core.OptionsValidationTest"/>
+            <class name="org.example.genpass.core.PasswordGeneratorTest"/>
+            <class name="org.example.genpass.core.PasswordStatisticsTest"/>
+            <class name="org.example.genpass.core.PinGeneratorTest"/>
+            <class name="org.example.genpass.core.PassphraseGeneratorTest"/>
+            <class name="org.example.genpass.core.WordlistTest"/>
+            <class name="org.example.genpass.core.StrengthEstimatorTest"/>
         </classes>
     </test>
 </suite>
