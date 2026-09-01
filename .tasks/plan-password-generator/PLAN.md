@@ -37,7 +37,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 - [x] **task-02-core-engine.md** — M1. Ядро генерации (пароль / passphrase / PIN / оценка стойкости) + unit-тесты TestNG
 - [x] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
 - [x] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
-- [ ] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
+- [x] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
 - [ ] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
 
 Зависимости: 01 → 02 → 03 → 04 → 05 → 06 (строго последовательно; каждая задача
@@ -621,6 +621,17 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > Решение пользователя: разработка ведётся напрямую на **master** в корневом каталоге
 > (worktree .worktrees/genpass и ветка feature/genpass-rebuild смержены и удалены).
 
+- **M4 (task-05) выполнен.** docker-compose.yml (image genpass:1.0, container_name genpass,
+  restart unless-stopped, 8088:8080, PORT=8080, healthcheck через HealthCheck, без
+  устаревшего version:) — провалидирован полным циклом: `docker compose config` OK →
+  up (amd64-tar загружен как genpass:1.0) → healthy → curl :8088 → `docker restart` →
+  снова healthy → POST /api/password 200 через маппинг → down. README.md (RU): обзор,
+  локальный запуск (PORT/HOST), API + формат ответа + примеры curl, Docker (amd64,
+  multi-arch через registry), деплой на Synology БЕЗ registry (решение пользователя):
+  определение архитектуры (`uname -m` ↔ tar-файл, таблица), сборка tar через buildx
+  multi-билдер, импорт Container Manager → Образ, проект с compose, чек-лист проверки;
+  reverse-proxy/HTTPS + Let's Encrypt, заметка про navigator.clipboard/secure context.
+  Деплой на целевом NAS — за пользователем по README (чек-лист раздела 4 готов).
 - **M3 (task-04) выполнен.** Dockerfile (temurin-21 builder+runtime, non-root app, Java-HEALTHCHECK
   `org.example.genpass.web.HealthCheck`, EXPOSE 8080) + Dockerfile.armv7 (debian:13-slim +
   openjdk-21-jre-headless armhf) + .dockerignore. **АКТУАЛИЗАЦИЯ Java 21** (решение пользователя):

@@ -1,0 +1,14 @@
+services:
+  genpass:
+    image: genpass:1.0
+    container_name: genpass
+    restart: unless-stopped
+    ports:
+      - "8088:8080"                  # хост:контейнер (8088, чтобы не конфликтовать с 8080 на DSM)
+    environment:
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "java", "-cp", "/app/app.jar", "org.example.genpass.web.HealthCheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
