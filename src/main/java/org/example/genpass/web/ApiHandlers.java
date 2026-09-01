@@ -1,6 +1,8 @@
 package org.example.genpass.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import org.example.genpass.core.PassphraseGenerator;
@@ -21,7 +23,10 @@ public final class ApiHandlers {
 
     private static final int MAX_BODY_BYTES = 64 * 1024;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    // Строгая коэрсия: никаких строк→int и float→int (дробная длина молча бы усекалась)
+    private final ObjectMapper mapper = new ObjectMapper()
+            .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+            .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS);
     private final PasswordGenerator passwordGenerator = new PasswordGenerator();
     private final PassphraseGenerator passphraseGenerator = new PassphraseGenerator();
     private final PinGenerator pinGenerator = new PinGenerator();

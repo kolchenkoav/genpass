@@ -20,18 +20,19 @@ public final class StaticHandler {
             String method = exchange.getRequestMethod();
             if (!"GET".equals(method) && !"HEAD".equals(method)) {
                 exchange.getResponseHeaders().set("Allow", "GET, HEAD");
-                writeError(exchange, 405);
+                writeError(exchange, 405, false);
                 return;
             }
             String file = resourceFor(exchange.getRequestURI().getPath());
             if (file == null) {
-                writeError(exchange, 404);
+                // неизвестные /api/* — это ответы API: no-store (PLAN 3.4)
+                writeError(exchange, 404, exchange.getRequestURI().getPath().startsWith("/api/"));
                 return;
             }
             byte[] content;
             try (InputStream in = StaticHandler.class.getResourceAsStream(file)) {
                 if (in == null) {
-                    writeError(exchange, 404);
+                    writeError(exchange, 404, false);
                     return;
                 }
                 content = in.readAllBytes();
@@ -60,8 +61,8 @@ public final class StaticHandler {
         };
     }
 
-    private static void writeError(HttpExchange exchange, int status) throws IOException {
-        SecurityHeaders.apply(exchange, false);
+    private static void writeError(HttpExchange exchange, int status, boolean noStore) throws IOException {
+        SecurityHeaders.apply(exchange, noStore);
         exchange.sendResponseHeaders(status, -1);
     }
 }

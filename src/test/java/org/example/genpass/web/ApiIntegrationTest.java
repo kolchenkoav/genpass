@@ -146,6 +146,29 @@ public class ApiIntegrationTest {
     }
 
     @Test
+    public void floatLengthRejected() {
+        given().contentType("application/json")
+                .body("{\"length\":4.9,\"lowercase\":true}")
+                .when().post("/api/password")
+                .then().statusCode(400);
+    }
+
+    @Test
+    public void stringLengthRejected() {
+        given().contentType("application/json")
+                .body("{\"length\":\"20\",\"lowercase\":true}")
+                .when().post("/api/password")
+                .then().statusCode(400);
+    }
+
+    @Test
+    public void unknownApiPath404CarriesNoStore() {
+        given().when().get("/api/unknown")
+                .then().statusCode(404)
+                .header("Cache-Control", equalTo("no-store"));
+    }
+
+    @Test
     public void oversizedBodyReturns413() {
         String big = "{\"length\":10,\"lowercase\":true,\"pad\":\"" + "x".repeat(70_000) + "\"}";
         given().contentType("application/json")

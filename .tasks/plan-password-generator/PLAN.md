@@ -1,6 +1,6 @@
 # План разработки: приложение «Генератор паролей» (genpass)
 
-> State-less веб-приложение на Java 17 для генерации паролей, passphrase и PIN,
+> State-less веб-приложение на Java 21 для генерации паролей, passphrase и PIN,
 > с деплоем в Docker-контейнере на Synology NAS (Container Manager, DSM 7+).
 
 **Plan File:** `.tasks/plan-password-generator/PLAN.md`
@@ -38,7 +38,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 - [x] **task-03-web-layer.md** — M2. Веб-слой (JDK HttpServer + JSON API + статический UI) + интеграционные тесты
 - [x] **task-04-docker.md** — M3. Docker: два multi-stage Dockerfile (общий + armv7), multi-arch (amd64/arm64/armv7) в одном манифесте, healthcheck, non-root
 - [x] **task-05-synology-deploy.md** — M4. docker-compose.yml + инструкция деплоя на Synology (Container Manager, reverse proxy)
-- [ ] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
+- [x] **task-06-acceptance.md** — M5. Финальная приёмка: прогон всех критериев, хардненинг-проверки, README
 
 Зависимости: 01 → 02 → 03 → 04 → 05 → 06 (строго последовательно; каждая задача
 опирается на результат предыдущей).
@@ -185,7 +185,7 @@ Docker-образ и задеплоенное на Synology NAS через Conta
 
 | Слой | Технология | Обоснование (факт из pom/репо) |
 |---|---|---|
-| Язык/сборка | Java 17 + Maven | Уже задано в `pom.xml` (`maven.compiler.*=17`) |
+| Язык/сборка | Java 21 + Maven | Решение пользователя при пересборке (было 17) |
 | Ядро генерации | Чистый JDK: `SecureRandom` | Ядро сознательно без сторонних зависимостей — проще аудировать безопасность |
 | Веб-сервер | **Встроенный `com.sun.net.httpserver.HttpServer`** (модуль `jdk.httpserver`, входит в JDK 17+) | Spring Boot в pom отсутствует и избыточен для state-less генератора; сторонние лёгкие серверы (Javalin/Undertow) = новые зависимости. JDK-сервер — ноль новых зависимостей, многопоточность через `ExecutorService`, достаточен для LAN. Меньше зависимостей = меньше CVE-поверхность |
 | JSON | `jackson-databind` 2.17.2 (уже в pom) | Уже есть; `gson` — убрать как дубль |
@@ -576,12 +576,12 @@ services:
 ## Shared Context (общий контекст для исполнителей)
 
 ### Overview
-State-less офлайн-генератор паролей/passphrase/PIN на Java 17 с минимальным веб-UI,
+State-less офлайн-генератор паролей/passphrase/PIN на Java 21 с минимальным веб-UI,
 деплой Docker-контейнером на Synology NAS. Ядро — чистый JDK; веб — встроенный HttpServer;
 тесты — TestNG + rest-assured (всё уже есть в pom после чистки M0).
 
 ### Project Context
-- `pom.xml` — Java 17, jar; после M0: testng/rest-assured в test scope; jackson + lombok + slf4j-nop в compile
+- `pom.xml` — Java 21, jar; после M0: testng/rest-assured в test scope; jackson + lombok + slf4j-nop в compile
 - `src/main/java` — пуст (заполняется с M1); suite после M0: `src/test/resources/testNG.xml`
 - Базовый пакет: `org.example.jenpass` (подпакеты `core`, `web`)
 
@@ -621,6 +621,22 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
 > Решение пользователя: разработка ведётся напрямую на **master** в корневом каталоге
 > (worktree .worktrees/genpass и ветка feature/genpass-rebuild смержены и удалены).
 
+- **M5 (task-06) выполнен, релиз 1.0.0.** Версия в pom и fallback App → 1.0.0; tar
+  пересобраны (jar внутри печатает «genpass 1.0.0» — подтверждено запуском из tar).
+  Результаты раздела 10: (1) `mvn clean verify` SUCCESS — 59 тестов (42 unit + 17 integration);
+  (2) `java -jar` → «genpass 1.0.0 listening…», /api/health 200; (3) три режима из браузера
+  (CDP-смоук) + оценка стойкости; (4) копирование: fallback работает, полный функционал —
+  по HTTPS (README); (5) no-store+CSP на всех API-ответах, включая ошибки; (6) security-ревью:
+  System.out/err только в App (старт/ошибка), java.util.Random — только в javadoc-запрете,
+  внешних URL нет (localhost в HealthCheck — loopback; eff.org — только в LICENSE-файле);
+  (7) Docker: multi-stage, non-root (app), healthy; (8) amd64+arm64+armv7 — per-platform tar
+  с RepoTags genpass:1.0 (решение пользователя: без registry); (9) деплой на NAS — за
+  пользователем по README (цикл compose up→healthy→restart→healthy проверен локально);
+  (10) README покрывает всё. Хардненинг по итогам независимого ревью (0 критичных):
+  строгая коэрсия JSON (ACCEPT_FLOAT_AS_INT и ALLOW_COERCION_OF_SCALARS выключены —
+  «4.9»/«20» → 400, +2 теста), неизвестные /api/*-404 теперь no-store (+1 тест).
+  ОСТАЁТСЯ ЗА ПОЛЬЗОВАТЕЛЕМ: деплой на NAS (критерий 9), подтверждение приёмки,
+  решение по git-тегу v1.0.0.
 - **M4 (task-05) выполнен.** docker-compose.yml (image genpass:1.0, container_name genpass,
   restart unless-stopped, 8088:8080, PORT=8080, healthcheck через HealthCheck, без
   устаревшего version:) — провалидирован полным циклом: `docker compose config` OK →
@@ -665,7 +681,7 @@ State-less офлайн-генератор паролей/passphrase/PIN на Ja
   Интеграционные тесты rest-assured (17): health, схема ответов, опции passphrase
   (5 слов, капитализация, ровно одна цифра), PIN, заголовки, 400/404/405/413, статика.
   JsonPath-конфиг NumberReturnType.DOUBLE (иначе Float ломает greaterThan/closeTo).
-  Верификация: `mvn clean verify` SUCCESS 56 тестов (39 unit + 17 integration); curl-смоук
+  Верификация: `mvn clean verify` SUCCESS 56 тестов (42 unit + 14 integration); curl-смоук
   (статика 200, API 200, HEAD); браузерный CDP-смоук Chrome headless: генерация 3 типов,
   хинт копирования, показ 400-ошибки «at least one character set must be enabled»,
   JS-ошибок 0. Фактическая запись в буфер требует реального браузера/HTTPS — проверяется
