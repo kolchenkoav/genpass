@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpExchange;
 import org.example.genpass.core.PassphraseGenerator;
 import org.example.genpass.core.PassphraseOptions;
@@ -24,9 +25,10 @@ public final class ApiHandlers {
     private static final int MAX_BODY_BYTES = 64 * 1024;
 
     // Строгая коэрсия: никаких строк→int и float→int (дробная длина молча бы усекалась)
-    private final ObjectMapper mapper = new ObjectMapper()
+    private final ObjectMapper mapper = JsonMapper.builder()
             .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
-            .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS);
+            .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+            .build();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator();
     private final PassphraseGenerator passphraseGenerator = new PassphraseGenerator();
     private final PinGenerator pinGenerator = new PinGenerator();
@@ -44,6 +46,12 @@ public final class ApiHandlers {
             writeJson(exchange, 200, new HealthResponse("ok"));
         } catch (IOException e) {
             // клиент оборвал соединение — ответить уже некому
+        } catch (RuntimeException e) {
+            try {
+                writeJson(exchange, 500, new ErrorResponse("internal error"));
+            } catch (IOException ignored) {
+                // клиент оборвал соединение — ответить уже некому
+            }
         } finally {
             exchange.close();
         }
@@ -115,7 +123,7 @@ public final class ApiHandlers {
         }
     }
 
-    private byte[] readBody(HttpExchange exchange) throws IOException, RequestBodyTooLargeException {
+    private byte[] readBody(HttpExchange exchange) throws IOException {
         InputStream in = exchange.getRequestBody();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];

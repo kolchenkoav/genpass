@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /** JDK HttpServer + пул потоков; маршруты PLAN 5.3. */
 public final class WebServer {
@@ -36,5 +37,11 @@ public final class WebServer {
     public void stop() {
         server.stop(1);
         executor.shutdown();
+        try {
+            // дать работающим обработчикам дописать ответы до завершения JVM
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

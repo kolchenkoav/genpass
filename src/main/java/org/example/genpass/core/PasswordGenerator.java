@@ -46,7 +46,11 @@ public final class PasswordGenerator {
 
     private static void addIf(List<String> sets, boolean enabled, String set, boolean excludeAmbiguous) {
         if (enabled) {
-            sets.add(excludeAmbiguous ? filterAmbiguous(set) : set);
+            String effective = excludeAmbiguous ? filterAmbiguous(set) : set;
+            if (effective.isEmpty()) {
+                throw new IllegalArgumentException("enabled character set becomes empty after excluding ambiguous characters");
+            }
+            sets.add(effective);
         }
     }
 

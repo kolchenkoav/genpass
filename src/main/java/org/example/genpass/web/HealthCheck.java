@@ -17,7 +17,7 @@ public final class HealthCheck {
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:" + port + "/api/health"))
+                    .uri(URI.create("http://" + host() + ":" + port + "/api/health"))
                     .timeout(Duration.ofSeconds(5))
                     .GET()
                     .build();
@@ -26,6 +26,12 @@ public final class HealthCheck {
         } catch (Exception e) {
             System.exit(1);
         }
+    }
+
+    /** HOST из env (как у сервера); wildcard-адрес 0.0.0.0 для запроса заменяем на loopback. */
+    private static String host() {
+        String host = System.getenv().getOrDefault("HOST", "0.0.0.0");
+        return host.isBlank() || "0.0.0.0".equals(host) ? "127.0.0.1" : host;
     }
 
     private static int defaultPort() {

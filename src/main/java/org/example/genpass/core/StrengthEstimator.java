@@ -63,7 +63,12 @@ public final class StrengthEstimator {
         if (seconds < SECONDS_PER_YEAR) {
             return "~" + Math.round(seconds / 86400) + " дней";
         }
-        return "~" + Math.round(seconds / SECONDS_PER_YEAR) + " лет";
+        double years = seconds / SECONDS_PER_YEAR;
+        if (years >= Long.MAX_VALUE) {
+            // Math.round(double) насыщается до Long.MAX_VALUE — показываем потолок порядка величины
+            return ">10^" + (int) Math.log10(years) + " лет";
+        }
+        return "~" + Math.round(years) + " лет";
     }
 
     private static double log2(double x) {
